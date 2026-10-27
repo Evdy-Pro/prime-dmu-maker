@@ -1,0 +1,21 @@
+node_modules
+dist
+dist-ssr
+.git
+.github
+.cursor
+*.local
+.env
+.env.*
+!.env.example
+logs
+*.log
+.DS_Store
+.vscode
+.idea
+DMU Examples
+docs
+AGENTS.md
+README.md
+*.md
+.oxlintrc.json

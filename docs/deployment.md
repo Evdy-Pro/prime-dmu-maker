@@ -39,13 +39,21 @@ The GitHub Pages workflow does not set these variables, so that build uses the m
 
 ## Coolify
 
-The intended host is Coolify, so the design team can use the app on a network that reaches Synapse. This repo has no Dockerfile, compose file, or Coolify definition yet.
+The Synapse-backed app is meant for Coolify (PRIME team on `app.ehg-pro.com`), so browsers can reach internal Synapse endpoints. GitHub Pages keeps serving the mock build.
 
-When that host is added, update this doc in the same change with:
+### Image
 
-- the service type and the port Coolify should proxy
-- how `dist/` is produced in the image or build pack
-- any env vars (names only, never values)
-- how the browser reaches Synapse (the origin supplied as `VITE_API_BASE_URL` at build time, not a public GitHub Pages origin)
+`Dockerfile` is a multi-stage build: `node:22-alpine` runs `npm ci` and `npm run build`, then `nginx:1.27-alpine` serves `dist/` on port **80**. `nginx.conf` maps `/` to the SPA and `/health` for Coolify’s health check (`curl` is installed in the runtime image). Coolify build pack: `dockerfile`. `.dockerignore` keeps `node_modules`, `dist`, `.git`, and env files out of the build context.
 
-GitHub Pages can keep serving the mock build. The Synapse-backed app belongs on Coolify, because those endpoints are internal.
+### Env vars (build time)
+
+Vite inlines `VITE_*` at build time. Set these as Coolify build arguments / build-time env (names only; values stay in Coolify, never in git):
+
+| Name | Role |
+| --- | --- |
+| `VITE_API_BASE_URL` | Synapse origin. Empty keeps the mock catalog |
+| `VITE_API_CLIENT_ID` | Sent as `X-Client-Id` |
+| `VITE_API_CLIENT_SECRET` | Sent as `X-Client-Secret` |
+| `VITE_USE_MOCK_DATA` | `true` forces the mock catalog even when the base URL is set |
+
+The browser calls the Synapse origin from `VITE_API_BASE_URL` directly in production builds (no Vite proxy). Leave the vars empty for a mock-only Coolify deploy.
