@@ -43,7 +43,7 @@ The Synapse-backed app is meant for Coolify (PRIME team on `app.ehg-pro.com`), s
 
 ### Image
 
-`Dockerfile` is a multi-stage build: `node:22-alpine` runs `npm ci` and `npm run build`, then `nginx:1.27-alpine` serves `dist/` on port **80**. `nginx.conf` maps `/` to the SPA and `/health` for Coolify’s health check (`curl` is installed in the runtime image). Coolify build pack: `dockerfile`. `.dockerignore` keeps `node_modules`, `dist`, `.git`, and env files out of the build context.
+`Dockerfile` is a multi-stage build: `node:22-alpine` runs `npm ci` and `npm run build`, then `nginx:1.27-alpine` serves `dist/` on port **80**. `nginx.conf` maps `/` to the SPA and `/health` for Coolify’s health check (`curl` is installed in the runtime image). Coolify build pack: `dockerfile`. `.dockerignore` keeps `node_modules`, `dist`, `.git`, and env files out of the build context. Keep `DMU Examples/` in the context — `src/templates/primeDmuCss.ts` imports the reference CSS from there at build time.
 
 ### Env vars (build time)
 
