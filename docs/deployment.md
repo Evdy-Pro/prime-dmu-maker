@@ -41,6 +41,8 @@ The GitHub Pages workflow does not set these variables, so that build uses the m
 
 The Synapse-backed app is meant for Coolify (PRIME team on `app.ehg-pro.com`), so browsers can reach internal Synapse endpoints. GitHub Pages keeps serving the mock build.
 
+Coolify project **PRIME DMU Maker**, application **DMU Maker**, public repo `Evdy-Pro/prime-dmu-maker` branch `main`, domain `https://dmu-maker.primeinc.dev` (FQDN stored as `http://…` like other PRIME apps behind the TLS load balancer). Default deploy uses the mock catalog until Synapse build env is set.
+
 ### Image
 
 `Dockerfile` is a multi-stage build: `node:22-alpine` runs `npm ci` and `npm run build`, then `nginx:1.27-alpine` serves `dist/` on port **80**. `nginx.conf` maps `/` to the SPA and `/health` for Coolify’s health check (`curl` is installed in the runtime image). Coolify build pack: `dockerfile`. `.dockerignore` keeps `node_modules`, `dist`, `.git`, and env files out of the build context. Keep `DMU Examples/` in the context — `src/templates/primeDmuCss.ts` imports the reference CSS from there at build time.
