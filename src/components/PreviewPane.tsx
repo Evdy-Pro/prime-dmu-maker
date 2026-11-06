@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useDmu } from "../context/dmu-context.ts";
 import { usesMockActivityData } from "../services/activitySource.ts";
-import { generateDmuHtml, withPreviewCss } from "../templates/generateDmuHtml.ts";
+import { applyDmuColors, generateDmuHtml, withPreviewCss } from "../templates/generateDmuHtml.ts";
 import { primeDmuCss } from "../templates/primeDmuCss.ts";
 import type { PreviewViewport } from "./Sidebar.tsx";
 
@@ -18,12 +18,13 @@ export function PreviewPane({ previewViewport }: { previewViewport: PreviewViewp
     if (!activity) {
       return "";
     }
-    const html = generateDmuHtml(activity, {
+    const html = generateDmuHtml(activity);
+    const css = applyDmuColors(primeDmuCss, {
       primary: primaryColor,
       secondary: secondaryColor,
       cta: ctaColor,
     });
-    return withPreviewCss(html, primeDmuCss);
+    return withPreviewCss(html, css);
   }, [activity, primaryColor, secondaryColor, ctaColor]);
 
   return (

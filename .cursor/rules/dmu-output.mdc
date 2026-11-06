@@ -9,6 +9,7 @@ alwaysApply: false
 Read `docs/dmu-output.md` before editing templates or `DMU Examples/`. Update that doc if HTML, CSS variables, the zip layout, or the register URL change.
 
 - Preview inlines CSS with `withPreviewCss`. The zip keeps a real `css/PRIME_DMU.css` file and does not inline it.
+- Generated HTML has no `<style>` block. Picker colors and the header-logo size rule go into the CSS through `applyDmuColors`, for both preview and zip.
 - The shipped stylesheet is `DMU Examples/PRIME_13WC2610/css/PRIME_DMU.css`, imported by `primeDmuCss.ts`. Other example HTML files are references, not inputs.
 - Live-webinar artwork renders only when the activity code contains `WC`.
 - Register links use `utm_source=MPT` and `utm_medium=DMU`. Do not add the sample `onclick` that appends `mh` unless product asks for it.

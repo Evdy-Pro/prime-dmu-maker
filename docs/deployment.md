@@ -16,7 +16,7 @@ Node 22 is what GitHub Actions uses (`actions/setup-node`).
 
 ## Asset base
 
-`vite.config.ts` sets `base` to `./` for `vite build` and `/` for the dev server. The relative base lets one `dist/` work on GitHub project pages without hard-coding the repo name. Export logo fetches use `import.meta.env.BASE_URL`, so a base-path change has to keep those fetches working. See `docs/dmu-output.md`.
+`vite.config.ts` sets `base` to `./` for `vite build` and `/` for the dev server. The relative base lets one `dist/` work on GitHub project pages without hard-coding the repo name. The export does not fetch logos. The PRIME and webinar logos are hosted at `media.primeinc.org`, so the base path does not affect them. See `docs/dmu-output.md`.
 
 ## Synapse env
 

@@ -6,10 +6,11 @@ import {
   type FacultyMember,
 } from "../types/dmu.ts";
 
-const PRIME_LOGO_URL = "images/PRIME_White.svg";
-const WEBINAR_LOGO_URL = "images/live_webinar.svg";
+const PRIME_LOGO_URL = "https://media.primeinc.org/upload/DMU_PRIME_White.svg";
+const WEBINAR_LOGO_URL = "https://media.primeinc.org/upload/DMU_live_webinar.svg";
 const STYLESHEET_LINK = '<link rel="stylesheet" href="css/PRIME_DMU.css">';
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+const HEADER_LOGO_RULE = "#DMU .nav-wrap .brandLogo { width: auto; height: 36px; max-width: 160px; }";
 
 export type DmuColors = {
   primary: string;
@@ -28,6 +29,31 @@ function escapeHtml(value: string): string {
 
 function cssColor(value: string, fallback: string): string {
   return HEX_COLOR.test(value) ? value.toLowerCase() : fallback;
+}
+
+function setCssVariable(css: string, name: string, value: string): string {
+  const declaration = new RegExp(`(${name}\\s*:\\s*)#[0-9a-fA-F]{3,8}`);
+  if (!declaration.test(css)) {
+    throw new Error(`Could not find ${name} in the DMU stylesheet.`);
+  }
+  return css.replace(declaration, (_match, prefix: string) => `${prefix}${value}`);
+}
+
+/**
+ * Writes the picker colors into the `:root` block of the PRIME stylesheet and appends the
+ * header-logo size rule. The HTML carries no `<style>` block, so the zip CSS and the preview
+ * both use this string.
+ */
+export function applyDmuColors(css: string, colors: DmuColors): string {
+  const primary = cssColor(colors.primary, DEFAULT_PRIMARY_COLOR);
+  const secondary = cssColor(colors.secondary, DEFAULT_SECONDARY_COLOR);
+  const cta = cssColor(colors.cta, DEFAULT_CTA_COLOR);
+  let patched = css;
+  patched = setCssVariable(patched, "--headerbg", primary);
+  patched = setCssVariable(patched, "--flexfiller", primary);
+  patched = setCssVariable(patched, "--snapshotBG", secondary);
+  patched = setCssVariable(patched, "--ctabutton", cta);
+  return `${patched.trimEnd()}\n\n${HEADER_LOGO_RULE}\n`;
 }
 
 function registerHref(activityCode: string): string {
@@ -92,10 +118,7 @@ function facultyLayout(faculty: FacultyMember[]): string {
   }
 }
 
-export function generateDmuHtml(activity: DmuActivity, colors: DmuColors): string {
-  const primary = cssColor(colors.primary, DEFAULT_PRIMARY_COLOR);
-  const secondary = cssColor(colors.secondary, DEFAULT_SECONDARY_COLOR);
-  const cta = cssColor(colors.cta, DEFAULT_CTA_COLOR);
+export function generateDmuHtml(activity: DmuActivity): string {
   const title = escapeHtml(activity.title);
   const date = escapeHtml(activity.date);
   const credits = escapeHtml(String(activity.cme_credits));
@@ -111,10 +134,6 @@ export function generateDmuHtml(activity: DmuActivity, colors: DmuColors): strin
     <meta name="author" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     ${STYLESHEET_LINK}
-    <style>
-      :root { --headerbg: ${primary}; --flexfiller: ${primary}; --snapshotBG: ${secondary}; --ctabutton: ${cta}; }
-      #DMU .nav-wrap .brandLogo { width: auto; height: 36px; max-width: 160px; }
-    </style>
 </head>
 <body style="background-color: #e6e6e6;">
     <div id="DMU" class="dmuWrapper" style="background-color: #e6e6e6;">
@@ -172,6 +191,19 @@ export function generateDmuHtml(activity: DmuActivity, colors: DmuColors): strin
     </div>
 </body>
 </html>`;
+}
+
+/**
+ * Returns the `<div id="DMU">` wrapper and its children from a document built by
+ * `generateDmuHtml`. The doctype, html, head, style, and body wrappers are excluded.
+ */
+export function extractDmuSnippet(html: string): string {
+  const start = html.indexOf('<div id="DMU"');
+  const end = html.indexOf("</body>");
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error("Could not find the DMU wrapper in the generated HTML.");
+  }
+  return `${html.slice(start, end).trimEnd()}\n`;
 }
 
 export function withPreviewCss(html: string, css: string): string {
