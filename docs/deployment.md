@@ -1,13 +1,13 @@
 # Deployment
 
-Describes `package.json` scripts, `vite.config.ts`, and `.github/workflows/pages.yml`.
+Describes `package.json` scripts, `vite.config.ts`, `.github/workflows/pages.yml`, `Dockerfile`, and `nginx.conf`.
 
 ## Local
 
 ```bash
 npm ci
 npm run dev       # Vite dev server
-npm run build     # tsc -b && vite build → dist/
+npm run build     # vue-tsc -b && vite build → dist/
 npm run preview   # serve dist/
 npm run lint      # oxlint
 ```
@@ -29,7 +29,7 @@ Node 22 is what GitHub Actions uses (`actions/setup-node`).
 | `VITE_API_CLIENT_SECRET` | Sent as `X-Client-Secret` |
 | `VITE_USE_MOCK_DATA` | `true` forces the mock catalog even when the base URL is set |
 
-When the base URL is set, the dev server proxies paths starting with `/client` to that origin (`changeOrigin: true`). The browser calls that same-origin path. A production build calls the origin directly, because Vite inlines `VITE_` values at build time. Coolify must supply them to the build. Those values are present in the built JavaScript.
+When the base URL is set, the dev server proxies paths starting with `/client` to that origin (`changeOrigin: true`). The browser calls that same-origin path in dev and in the Coolify image. `VITE_API_BASE_URL` still chooses live data over the mock catalog. The client id and secret are inlined at build time and are present in the built JavaScript. Coolify supplies them as image build args.
 
 The GitHub Pages workflow does not set these variables, so that build uses the mock catalog.
 
@@ -39,13 +39,15 @@ The GitHub Pages workflow does not set these variables, so that build uses the m
 
 ## Coolify
 
-The intended host is Coolify, so the design team can use the app on a network that reaches Synapse. This repo has no Dockerfile, compose file, or Coolify definition yet.
+The Synapse-backed app runs on Coolify from the repo `Dockerfile`. Coolify should use that Dockerfile and proxy port 80.
 
-When that host is added, update this doc in the same change with:
+The image builds with Node 22 (`npm ci`, then `npm run build`) and serves `dist/` with Nginx. Set these as image build args (names only, never values):
 
-- the service type and the port Coolify should proxy
-- how `dist/` is produced in the image or build pack
-- any env vars (names only, never values)
-- how the browser reaches Synapse (the origin supplied as `VITE_API_BASE_URL` at build time, not a public GitHub Pages origin)
+- `VITE_API_BASE_URL` — the Synapse origin, such as `https://synapse-api.primeinc.org`. A non-empty value selects live data. The browser does not call this origin.
+- `VITE_API_CLIENT_ID`
+- `VITE_API_CLIENT_SECRET`
+- `VITE_USE_MOCK_DATA` — leave unset so live data stays on. `true` forces the mock catalog.
+
+The browser calls same-origin paths starting with `/client`. Nginx proxies those paths to `https://synapse-api.primeinc.org`, keeps the path, sets `Host` to that origin, and forwards `X-Client-Id` and `X-Client-Secret`. Uploads are allowed up to 12MB. Every other path is the static app, and unknown paths fall back to `index.html`.
 
 GitHub Pages can keep serving the mock build. The Synapse-backed app belongs on Coolify, because those endpoints are internal.

@@ -1,6 +1,6 @@
 ---
 description: Activity model, mock catalog, and the Synapse fetch seam
-globs: src/types/**/*.ts,src/services/**/*.ts,src/context/**/*.ts
+globs: src/types/**/*.ts,src/services/**/*.ts,src/composables/**/*.ts
 alwaysApply: false
 ---
 

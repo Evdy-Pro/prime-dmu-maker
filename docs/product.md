@@ -21,4 +21,4 @@ Activity content comes from Synapse when `VITE_API_BASE_URL` is set and `VITE_US
 
 ## Coolify
 
-The long-term host is Coolify, on a network where the design team's browsers can call Synapse. There is no Dockerfile or Coolify config yet. GitHub Pages (`.github/workflows/pages.yml`) builds without Synapse env vars, so that deploy stays on the mock catalog. See `docs/deployment.md`.
+The long-term host is Coolify. The repo `Dockerfile` serves the app with Nginx, and the browser calls same-origin `/client` paths that Nginx forwards to Synapse. GitHub Pages (`.github/workflows/pages.yml`) builds without Synapse env vars, so that deploy stays on the mock catalog. See `docs/deployment.md`.

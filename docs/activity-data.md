@@ -1,6 +1,6 @@
 # Activity data
 
-Describes `src/types/dmu.ts`, `src/services/mockDataService.ts`, `src/services/synapseApiService.ts`, `src/services/activitySource.ts`, and the fetch path in `src/context/DmuContext.tsx`.
+Describes `src/types/dmu.ts`, `src/services/mockDataService.ts`, `src/services/synapseApiService.ts`, `src/services/activitySource.ts`, and the fetch path in `src/composables/useDmu.ts`.
 
 ## `DmuActivity`
 
@@ -48,7 +48,7 @@ The sidebar lists these four codes while the mock catalog is active. Adding or r
 
 ## Synapse
 
-Both calls send `Accept: application/json`, `X-Client-Id` (`VITE_API_CLIENT_ID`), and `X-Client-Secret` (`VITE_API_CLIENT_SECRET`). `npm run dev` requests same-origin paths starting with `/client`. The Vite proxy forwards them to `VITE_API_BASE_URL`. A production build calls `VITE_API_BASE_URL` directly.
+Both calls send `Accept: application/json`, `X-Client-Id` (`VITE_API_CLIENT_ID`), and `X-Client-Secret` (`VITE_API_CLIENT_SECRET`). The app requests same-origin paths starting with `/client`. The Vite dev server proxies them to `VITE_API_BASE_URL`. On Coolify, Nginx proxies them to `https://synapse-api.primeinc.org`. See `docs/deployment.md`.
 
 ### Activity
 

@@ -13,7 +13,7 @@ Internal app for PRIME Education's graphic design team. A DMU is the ad unit for
 | Area | Doc | Code |
 | --- | --- | --- |
 | Audience, DMU, MedPage Today, Coolify, Synapse | `docs/product.md` | — |
-| Screens, state, fetch flow | `docs/architecture.md` | `src/App.tsx`, `src/components/`, `src/context/` |
+| Screens, state, fetch flow | `docs/architecture.md` | `src/App.vue`, `src/components/`, `src/composables/` |
 | Activity shape, mock catalog, Synapse API | `docs/activity-data.md` | `src/types/dmu.ts`, `src/services/` |
 | Preview HTML, colors, zip | `docs/dmu-output.md` | `src/templates/` |
 | Scripts, GitHub Pages, Coolify | `docs/deployment.md` | `package.json`, `vite.config.ts`, `.github/workflows/` |
