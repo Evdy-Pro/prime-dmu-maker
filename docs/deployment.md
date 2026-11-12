@@ -39,15 +39,23 @@ The GitHub Pages workflow does not set these variables, so that build uses the m
 
 ## Coolify
 
-The Synapse-backed app runs on Coolify from the repo `Dockerfile`. Coolify should use that Dockerfile and proxy port 80.
+The Synapse-backed app is meant for Coolify (PRIME team on `app.ehg-pro.com`), so browsers can reach internal Synapse endpoints. GitHub Pages keeps serving the mock build.
 
-The image builds with Node 22 (`npm ci`, then `npm run build`) and serves `dist/` with Nginx. Set these as image build args (names only, never values):
+Coolify project **PRIME DMU Maker**, application **DMU Maker**, public repo `Evdy-Pro/prime-dmu-maker` branch `main`, domain `https://dmu-maker.primeinc.dev` (FQDN stored as `http://…` like other PRIME apps behind the TLS load balancer). Default deploy uses the mock catalog until Synapse build env is set.
 
-- `VITE_API_BASE_URL` — the Synapse origin, such as `https://synapse-api.primeinc.org`. A non-empty value selects live data. The browser does not call this origin.
-- `VITE_API_CLIENT_ID`
-- `VITE_API_CLIENT_SECRET`
-- `VITE_USE_MOCK_DATA` — leave unset so live data stays on. `true` forces the mock catalog.
+### Image
 
-The browser calls same-origin paths starting with `/client`. Nginx proxies those paths to `https://synapse-api.primeinc.org`, keeps the path, sets `Host` to that origin, and forwards `X-Client-Id` and `X-Client-Secret`. Uploads are allowed up to 12MB. Every other path is the static app, and unknown paths fall back to `index.html`.
+`Dockerfile` is a multi-stage build: `node:22-alpine` runs `npm ci` and `npm run build`, then `nginx:1.27-alpine` serves `dist/` on port **80**. `nginx.conf` maps `/` to the SPA and `/health` for Coolify’s health check (`curl` is installed in the runtime image). Coolify build pack: `dockerfile`. `.dockerignore` keeps `node_modules`, `dist`, `.git`, and env files out of the build context. Keep `DMU Examples/` in the context — `src/templates/primeDmuCss.ts` imports the reference CSS from there at build time.
 
-GitHub Pages can keep serving the mock build. The Synapse-backed app belongs on Coolify, because those endpoints are internal.
+### Env vars (build time)
+
+Vite inlines `VITE_*` at build time. Set these as Coolify build arguments / build-time env (names only; values stay in Coolify, never in git):
+
+| Name | Role |
+| --- | --- |
+| `VITE_API_BASE_URL` | Synapse origin. Empty keeps the mock catalog |
+| `VITE_API_CLIENT_ID` | Sent as `X-Client-Id` |
+| `VITE_API_CLIENT_SECRET` | Sent as `X-Client-Secret` |
+| `VITE_USE_MOCK_DATA` | `true` forces the mock catalog even when the base URL is set |
+
+The browser calls the Synapse origin from `VITE_API_BASE_URL` directly in production builds (no Vite proxy). Leave the vars empty for a mock-only Coolify deploy.
