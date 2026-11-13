@@ -101,7 +101,7 @@ async function synapseFetch(path: string, init?: RequestInit): Promise<Response>
   }
 
   try {
-    return await fetch(apiUrl(path), { ...init, headers });
+    return await fetch(apiUrl(path), { ...init, headers, redirect: "manual" });
   } catch {
     throw new SynapseApiError(0, NETWORK_MESSAGE);
   }
@@ -116,6 +116,9 @@ async function readJson(response: Response): Promise<Record<string, unknown> | n
 }
 
 async function errorMessage(response: Response): Promise<string> {
+  if (response.type === "opaqueredirect") {
+    return AUTH_MESSAGE;
+  }
   if (response.status === 404) {
     return NOT_FOUND_MESSAGE;
   }

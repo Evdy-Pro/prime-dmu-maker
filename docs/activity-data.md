@@ -48,7 +48,7 @@ The sidebar lists these four codes while the mock catalog is active. Adding or r
 
 ## Synapse
 
-Both calls send `Accept: application/json`, `X-Client-Id` (`VITE_API_CLIENT_ID`), and `X-Client-Secret` (`VITE_API_CLIENT_SECRET`). The app requests same-origin paths starting with `/client`. The Vite dev server proxies them to `VITE_API_BASE_URL`. On Coolify, Nginx proxies them to `https://synapse-api.primeinc.org`. See `docs/deployment.md`.
+Both calls send `Accept: application/json`, `X-Client-Id` (`VITE_API_CLIENT_ID`), and `X-Client-Secret` (`VITE_API_CLIENT_SECRET`). The client calls `fetch` with `redirect: "manual"`, so it does not follow a redirect. The app requests same-origin paths starting with `/client`. The Vite dev server proxies them to `VITE_API_BASE_URL`. On Coolify, Nginx proxies them to `https://synapse-api.primeinc.org`. See `docs/deployment.md`.
 
 ### Activity
 
@@ -98,8 +98,11 @@ While an upload is in flight, activity search and export stay disabled.
 | --- | --- |
 | 404 | `Activity not found in Synapse.` |
 | 401 or 403 | `Authentication failed. The client id or secret is invalid or not allowlisted.` |
+| Opaque redirect | `Authentication failed. The client id or secret is invalid or not allowlisted.` |
 | 422 | A string `message`, plus string entries under `errors`, when the JSON body has them. Otherwise `The file was rejected. Use a PNG, JPEG, or WebP image that is 10MB or smaller.` |
 | Other HTTP status | `Synapse request failed ({status}).` |
 | `fetch` throws | `Could not reach the Synapse QA API. Check that you are on VPN and that QA is reachable.` |
+
+An unauthorized Synapse call can answer with a redirect. Because `fetch` does not follow it, that response stays an opaque redirect and uses the auth message. A thrown `fetch` still uses the network message.
 
 A failed activity fetch clears the activity and shows the message in the preview pane. A failed upload leaves the current photo and shows the message on that faculty row.

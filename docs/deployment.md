@@ -49,7 +49,7 @@ Coolify project **PRIME DMU Maker**, application **DMU Maker**, public repo `Evd
 
 ### Env vars (build time)
 
-Vite inlines `VITE_*` at build time. Set these as Coolify build arguments / build-time env (names only; values stay in Coolify, never in git):
+Vite inlines `VITE_*` at build time. Set these as Coolify build arguments / build-time env (names only; values stay in Coolify, never in git). Each one must be available during build. A value that contains `$` must be literal so Coolify does not interpolate it. Under Advanced → Build, set Build arguments to Managed manually in Dockerfile. Leave Docker BuildKit secrets off: that mode does not pass `--build-arg`, and the Dockerfile reads these through `ARG` and `ENV`. The `ARG` lines have no default, so an empty default cannot replace an inherited value. The nginx stage does not receive these variables. After a credential change, redeploy without cache so the `npm run build` layer is not reused.
 
 | Name | Role |
 | --- | --- |
@@ -58,4 +58,4 @@ Vite inlines `VITE_*` at build time. Set these as Coolify build arguments / buil
 | `VITE_API_CLIENT_SECRET` | Sent as `X-Client-Secret` |
 | `VITE_USE_MOCK_DATA` | `true` forces the mock catalog even when the base URL is set |
 
-The browser calls same-origin paths starting with `/client`. Nginx proxies those paths to `https://synapse-api.primeinc.org`, keeps the path, sets `Host` to that origin, and forwards `X-Client-Id` and `X-Client-Secret`. Uploads are allowed up to 12MB. `VITE_API_BASE_URL` still only chooses live data over the mock catalog. Leave the vars empty for a mock-only Coolify deploy.
+The browser calls same-origin paths starting with `/client`. Nginx proxies those paths to `https://synapse-api.primeinc.org`, keeps the path, sets `Host` to that origin, and forwards `X-Client-Id` and `X-Client-Secret`. It forwards the incoming `X-Forwarded-Proto`, and uses the container scheme only when that header is absent. Uploads are allowed up to 12MB. `VITE_API_BASE_URL` still only chooses live data over the mock catalog. Leave the vars empty for a mock-only Coolify deploy. A live build (base URL set, and `VITE_USE_MOCK_DATA` not `true`) fails if the client id or secret is blank or missing from `dist/assets/*.js`. The failure text does not include the values.
