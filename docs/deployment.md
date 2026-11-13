@@ -45,7 +45,7 @@ Coolify project **PRIME DMU Maker**, application **DMU Maker**, public repo `Evd
 
 ### Image
 
-`Dockerfile` is a multi-stage build: `node:22-alpine` runs `npm ci` and `npm run build`, then `nginx:1.27-alpine` serves `dist/` on port **80**. `nginx.conf` maps `/` to the SPA and `/health` for Coolify’s health check (`curl` is installed in the runtime image). Coolify build pack: `dockerfile`. `.dockerignore` keeps `node_modules`, `dist`, `.git`, and env files out of the build context. Keep `DMU Examples/` in the context — `src/templates/primeDmuCss.ts` imports the reference CSS from there at build time.
+`Dockerfile` is a multi-stage build: `node:22-alpine` runs `npm ci` and `npm run build`, then `nginx:1.27-alpine` serves `dist/` on port **80**. `nginx.conf` maps `/` to the SPA, `/health` for Coolify’s health check (`curl` is installed in the runtime image), and proxies `/client/` to `https://synapse-api.primeinc.org`. Coolify build pack: `dockerfile`. `.dockerignore` keeps `node_modules`, `dist`, `.git`, and env files out of the build context. Keep `DMU Examples/` in the context — `src/templates/primeDmuCss.ts` imports the reference CSS from there at build time.
 
 ### Env vars (build time)
 
@@ -58,4 +58,4 @@ Vite inlines `VITE_*` at build time. Set these as Coolify build arguments / buil
 | `VITE_API_CLIENT_SECRET` | Sent as `X-Client-Secret` |
 | `VITE_USE_MOCK_DATA` | `true` forces the mock catalog even when the base URL is set |
 
-The browser calls the Synapse origin from `VITE_API_BASE_URL` directly in production builds (no Vite proxy). Leave the vars empty for a mock-only Coolify deploy.
+The browser calls same-origin paths starting with `/client`. Nginx proxies those paths to `https://synapse-api.primeinc.org`, keeps the path, sets `Host` to that origin, and forwards `X-Client-Id` and `X-Client-Secret`. Uploads are allowed up to 12MB. `VITE_API_BASE_URL` still only chooses live data over the mock catalog. Leave the vars empty for a mock-only Coolify deploy.
