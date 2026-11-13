@@ -1,7 +1,7 @@
 import { saveAs } from "file-saver";
 import JSZip from "jszip";
 import type { DmuActivity } from "../types/dmu.ts";
-import { generateDmuHtml, type DmuColors } from "./generateDmuHtml.ts";
+import { applyDmuColors, extractDmuSnippet, generateDmuHtml, type DmuColors } from "./generateDmuHtml.ts";
 import { primeDmuCss } from "./primeDmuCss.ts";
 
 async function blobUrlToDataUrl(url: string): Promise<string> {
@@ -18,19 +18,6 @@ async function blobUrlToDataUrl(url: string): Promise<string> {
   });
 }
 
-function publicAsset(fileName: string): string {
-  const base = import.meta.env.BASE_URL;
-  return `${base}${fileName.replace(/^\//, "")}`;
-}
-
-async function bundledLogo(path: string): Promise<Blob> {
-  const response = await fetch(path);
-  if (!response.ok) {
-    throw new Error(`Could not load ${path}.`);
-  }
-  return response.blob();
-}
-
 async function embedFacultyPhotos(activity: DmuActivity): Promise<DmuActivity> {
   const faculty = await Promise.all(
     activity.faculty.map(async (member) => {
@@ -45,12 +32,11 @@ async function embedFacultyPhotos(activity: DmuActivity): Promise<DmuActivity> {
 
 export async function exportDmuZip(activity: DmuActivity, colors: DmuColors): Promise<void> {
   const exportActivity = await embedFacultyPhotos(activity);
-  const html = generateDmuHtml(exportActivity, colors);
+  const html = generateDmuHtml(exportActivity);
   const zip = new JSZip();
   zip.file("index.html", html);
-  zip.file("css/PRIME_DMU.css", primeDmuCss);
-  zip.file("images/PRIME_White.svg", await bundledLogo(publicAsset("images/PRIME_White.svg")));
-  zip.file("images/live_webinar.svg", await bundledLogo(publicAsset("images/live_webinar.svg")));
+  zip.file("dmu-snippet.txt", extractDmuSnippet(html));
+  zip.file("css/PRIME_DMU.css", applyDmuColors(primeDmuCss, colors));
   const blob = await zip.generateAsync({ type: "blob" });
   saveAs(blob, `${activity.activityCode}_DMU.zip`);
 }

@@ -81,11 +81,7 @@ export async function uploadFacultyPhoto(input: {
 }
 
 function apiUrl(path: string): string {
-  if (import.meta.env.DEV) {
-    return path;
-  }
-  const base = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
-  return `${base}${path}`;
+  return path;
 }
 
 function authHeaders(): Headers {

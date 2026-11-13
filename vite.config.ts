@@ -1,5 +1,5 @@
 import tailwindcss from '@tailwindcss/vite'
-import react from '@vitejs/plugin-react'
+import vue from '@vitejs/plugin-vue'
 import { defineConfig, loadEnv } from 'vite'
 
 // Relative asset paths so the same build works on GitHub project pages
@@ -10,7 +10,7 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     base: command === 'build' ? './' : '/',
-    plugins: [react(), tailwindcss()],
+    plugins: [vue(), tailwindcss()],
     server: apiBaseUrl
       ? {
           proxy: {

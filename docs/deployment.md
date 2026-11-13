@@ -1,13 +1,13 @@
 # Deployment
 
-Describes `package.json` scripts, `vite.config.ts`, and `.github/workflows/pages.yml`.
+Describes `package.json` scripts, `vite.config.ts`, `.github/workflows/pages.yml`, `Dockerfile`, and `nginx.conf`.
 
 ## Local
 
 ```bash
 npm ci
 npm run dev       # Vite dev server
-npm run build     # tsc -b && vite build → dist/
+npm run build     # vue-tsc -b && vite build → dist/
 npm run preview   # serve dist/
 npm run lint      # oxlint
 ```
@@ -16,7 +16,7 @@ Node 22 is what GitHub Actions uses (`actions/setup-node`).
 
 ## Asset base
 
-`vite.config.ts` sets `base` to `./` for `vite build` and `/` for the dev server. The relative base lets one `dist/` work on GitHub project pages without hard-coding the repo name. Export logo fetches use `import.meta.env.BASE_URL`, so a base-path change has to keep those fetches working. See `docs/dmu-output.md`.
+`vite.config.ts` sets `base` to `./` for `vite build` and `/` for the dev server. The relative base lets one `dist/` work on GitHub project pages without hard-coding the repo name. The export does not fetch logos. The PRIME and webinar logos are hosted at `media.primeinc.org`, so the base path does not affect them. See `docs/dmu-output.md`.
 
 ## Synapse env
 
@@ -29,7 +29,7 @@ Node 22 is what GitHub Actions uses (`actions/setup-node`).
 | `VITE_API_CLIENT_SECRET` | Sent as `X-Client-Secret` |
 | `VITE_USE_MOCK_DATA` | `true` forces the mock catalog even when the base URL is set |
 
-When the base URL is set, the dev server proxies paths starting with `/client` to that origin (`changeOrigin: true`). The browser calls that same-origin path. A production build calls the origin directly, because Vite inlines `VITE_` values at build time. Coolify must supply them to the build. Those values are present in the built JavaScript.
+When the base URL is set, the dev server proxies paths starting with `/client` to that origin (`changeOrigin: true`). The browser calls that same-origin path in dev and in the Coolify image. `VITE_API_BASE_URL` still chooses live data over the mock catalog. The client id and secret are inlined at build time and are present in the built JavaScript. Coolify supplies them as image build args.
 
 The GitHub Pages workflow does not set these variables, so that build uses the mock catalog.
 
@@ -45,7 +45,7 @@ Coolify project **PRIME DMU Maker**, application **DMU Maker**, public repo `Evd
 
 ### Image
 
-`Dockerfile` is a multi-stage build: `node:22-alpine` runs `npm ci` and `npm run build`, then `nginx:1.27-alpine` serves `dist/` on port **80**. `nginx.conf` maps `/` to the SPA and `/health` for Coolify’s health check (`curl` is installed in the runtime image). Coolify build pack: `dockerfile`. `.dockerignore` keeps `node_modules`, `dist`, `.git`, and env files out of the build context. Keep `DMU Examples/` in the context — `src/templates/primeDmuCss.ts` imports the reference CSS from there at build time.
+`Dockerfile` is a multi-stage build: `node:22-alpine` runs `npm ci` and `npm run build`, then `nginx:1.27-alpine` serves `dist/` on port **80**. `nginx.conf` maps `/` to the SPA, `/health` for Coolify’s health check (`curl` is installed in the runtime image), and proxies `/client/` to `https://synapse-api.primeinc.org`. Coolify build pack: `dockerfile`. `.dockerignore` keeps `node_modules`, `dist`, `.git`, and env files out of the build context. Keep `DMU Examples/` in the context — `src/templates/primeDmuCss.ts` imports the reference CSS from there at build time.
 
 ### Env vars (build time)
 
@@ -58,4 +58,4 @@ Vite inlines `VITE_*` at build time. Set these as Coolify build arguments / buil
 | `VITE_API_CLIENT_SECRET` | Sent as `X-Client-Secret` |
 | `VITE_USE_MOCK_DATA` | `true` forces the mock catalog even when the base URL is set |
 
-The browser calls the Synapse origin from `VITE_API_BASE_URL` directly in production builds (no Vite proxy). Leave the vars empty for a mock-only Coolify deploy.
+The browser calls same-origin paths starting with `/client`. Nginx proxies those paths to `https://synapse-api.primeinc.org`, keeps the path, sets `Host` to that origin, and forwards `X-Client-Id` and `X-Client-Secret`. Uploads are allowed up to 12MB. `VITE_API_BASE_URL` still only chooses live data over the mock catalog. Leave the vars empty for a mock-only Coolify deploy.

@@ -1,6 +1,6 @@
 # Activity data
 
-Describes `src/types/dmu.ts`, `src/services/mockDataService.ts`, `src/services/synapseApiService.ts`, `src/services/activitySource.ts`, and the fetch path in `src/context/DmuContext.tsx`.
+Describes `src/types/dmu.ts`, `src/services/mockDataService.ts`, `src/services/synapseApiService.ts`, `src/services/activitySource.ts`, and the fetch path in `src/composables/useDmu.ts`.
 
 ## `DmuActivity`
 
@@ -13,9 +13,9 @@ Describes `src/types/dmu.ts`, `src/services/mockDataService.ts`, `src/services/s
 | `overview` | HTML inserted as-is into the overview section. Not escaped |
 | `artwork_url` | Hero image URL. Left as a remote URL in the zip |
 | `commercial_support_statement` | Footer support line. Escaped |
-| `faculty` | Ordered list of `{ id?, role, name, titles, photo_url }` |
+| `faculty` | Ordered list of `{ id?, role, name, titles, photo_url, isReplaced? }` |
 
-`id` is the Synapse faculty id. Mock members omit it. A live photo upload sends it as `faculty_id`.
+`id` is the Synapse faculty id. Mock members omit it. A live photo upload sends it as `faculty_id`. `isReplaced` is app state, not a Synapse or mock field. A fetch leaves it unset. A successful photo replacement sets it to `true` on that member.
 
 `titles` is plain text. Newlines become `<br>` in the DMU. Live faculty turn `<br>`, `<br/>`, and `<br />` (any case) in `title` and `affiliations` into newlines, drop carriage returns, collapse consecutive breaks into one newline, trim each field, drop blanks, then join the two fields with a newline. `photo_url` is a remote image URL, a `blob:` URL from a mock replacement, or the `https://` URL returned by a Synapse upload. A non-empty live `artwork_url` or faculty `photo_url` from the activity payload also gets `?t=` plus the fetch timestamp so a replaced file at the same URL is not served from the browser cache. An upload URL is stored as returned.
 
@@ -48,7 +48,7 @@ The sidebar lists these four codes while the mock catalog is active. Adding or r
 
 ## Synapse
 
-Both calls send `Accept: application/json`, `X-Client-Id` (`VITE_API_CLIENT_ID`), and `X-Client-Secret` (`VITE_API_CLIENT_SECRET`). `npm run dev` requests same-origin paths starting with `/client`. The Vite proxy forwards them to `VITE_API_BASE_URL`. A production build calls `VITE_API_BASE_URL` directly.
+Both calls send `Accept: application/json`, `X-Client-Id` (`VITE_API_CLIENT_ID`), and `X-Client-Secret` (`VITE_API_CLIENT_SECRET`). The app requests same-origin paths starting with `/client`. The Vite dev server proxies them to `VITE_API_BASE_URL`. On Coolify, Nginx proxies them to `https://synapse-api.primeinc.org`. See `docs/deployment.md`.
 
 ### Activity
 
@@ -88,7 +88,7 @@ The JSON body has a `data` object. Mapped fields:
 
 The client rejects a missing `id`, a disallowed type, or a file over 10MB before the request. Those messages stay on that faculty row.
 
-HTTP 201 returns `data.url`. That URL replaces `photo_url`. `file_id` and `file_key` are ignored. The preview and the zip use that remote URL. No `blob:` URL is created for a successful upload.
+HTTP 201 returns `data.url`. That URL replaces `photo_url`, and the client sets `isReplaced` to `true` on that member. The flag is not sent to Synapse. `file_id` and `file_key` are ignored. The preview and the zip use that remote URL. No `blob:` URL is created for a successful upload.
 
 While an upload is in flight, activity search and export stay disabled.
 

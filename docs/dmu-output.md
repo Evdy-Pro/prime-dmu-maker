@@ -9,7 +9,7 @@ Describes `src/templates/generateDmuHtml.ts`, `src/templates/exportDmuZip.ts`, a
 | | Preview | Export |
 | --- | --- | --- |
 | HTML | `generateDmuHtml` | `generateDmuHtml` |
-| CSS | Link tag plus inlined stylesheet (`withPreviewCss`) | `css/PRIME_DMU.css` in the zip |
+| CSS | Link tag plus inlined stylesheet from `applyDmuColors` (`withPreviewCss`) | `css/PRIME_DMU.css` in the zip, from `applyDmuColors` |
 | Faculty `blob:` photos | Object URLs | Data URLs |
 | Synapse replacement photos | `https://` URL from `data.url` | Same remote URL |
 | Download | None | `{activityCode}_DMU.zip` via `file-saver` |
@@ -18,20 +18,21 @@ Zip contents:
 
 ```text
 index.html
+dmu-snippet.txt
 css/PRIME_DMU.css
-images/PRIME_White.svg
-images/live_webinar.svg
 ```
 
-Logos are loaded from `public/images/` using `import.meta.env.BASE_URL`. Remote artwork, unreplaced faculty photos, and photos replaced through Synapse stay remote (typically `media.primeinc.org`). Mock replacements still use `blob:` in the preview and data URLs in the zip.
+`dmu-snippet.txt` is the `<div id="DMU" class="dmuWrapper">` block and its children, sliced from the same generated HTML as `index.html`. It has no doctype, `html`, `head`, `style`, or `body` tags. Paste it into production. Neither `index.html` nor the snippet has a `<style>` block. The color variables are written into `css/PRIME_DMU.css` (see below).
+
+Logos are not bundled. The PRIME and webinar logos load from `media.primeinc.org` in both the preview and the zip. Remote artwork, unreplaced faculty photos, and photos replaced through Synapse also stay remote (typically `media.primeinc.org`). Mock replacements still use `blob:` in the preview and data URLs in the zip.
 
 ## Generated page
 
-- Header logo: `images/PRIME_White.svg`.
-- Title, centered horizontally and vertically in the white band under the logo, then a live-webinar mark only when the activity code contains `WC` (case insensitive).
+- Header logo: `https://media.primeinc.org/upload/DMU_PRIME_White.svg`. Footer logo uses the same URL.
+- Title, centered horizontally and vertically in the white band under the logo, then a live-webinar mark (`https://media.primeinc.org/upload/DMU_live_webinar.svg`) only when the activity code contains `WC` (case insensitive).
 - Date, artwork, `REGISTER NOW!`, and the CME line. The hero (`.img-ladies`) is a block-level 3:2 image inside `.mw500`. That column is `flex: 0 0 46%` (`max-width: 46%`), so the register panel cannot shrink it into a 50/50 split. `.snapshot` takes the rest of the row, stretches to the image height, and overlaps the artwork by 50px. The visible artwork is about 41% of the row and the panel about 59%. `object-fit: cover` crops other ratios from the center on every breakpoint. At `max-width: 810px` (`.break-iPad-p`) the row stacks, the column returns to full width, and the image shifts up 40px. At `max-width: 600px` every `.flexRow` stacks. Those queries match the hand-built files in `DMU Examples/`.
-- Overview HTML, then faculty, then the support statement and a second PRIME logo. Faculty photos (`.img-moa`) are circles up to 150px wide, with `object-fit: cover` and a 3px white border. At `max-width: 600px` the register link stays on one line, and the footer logo stays 72px wide beside the support text.
-- Inline `:root` sets `--headerbg`, `--flexfiller`, `--snapshotBG`, and `--ctabutton` from the color pickers. Invalid hex falls back to the defaults in `src/types/dmu.ts`. The picker accepts `#` plus six hex digits.
+- Overview HTML, then faculty, then the support statement and a second PRIME logo. Faculty photos (`.img-moa`) are circles up to 150px wide, with `object-fit: cover` and a 3px white border. A photo that has not been replaced also has `.img-moa-default`, which sets `object-position: center 15%` so the crop keeps more of the top of the frame. A replaced photo uses only `.img-moa` and center-crops. At `max-width: 600px` the register link stays on one line, and the footer logo stays 72px wide beside the support text.
+- The HTML `<head>` holds only meta tags, the title, and the stylesheet link. Colors are not inline. `applyDmuColors` rewrites the `:root` declarations of `--headerbg` and `--flexfiller` (primary), `--snapshotBG` (secondary), and `--ctabutton` (CTA) in the CSS string. It also appends `#DMU .nav-wrap .brandLogo { width: auto; height: 36px; max-width: 160px; }` so the header logo keeps its size. It throws if a variable is missing from the stylesheet. Invalid hex falls back to the defaults in `src/types/dmu.ts`. The picker accepts `#` plus six hex digits.
 
 Register URL:
 
@@ -57,4 +58,4 @@ Text fields other than `overview` are HTML-escaped. `overview` is trusted HTML f
 
 ## Reference CSS
 
-Changing `DMU Examples/PRIME_13WC2610/css/PRIME_DMU.css` changes preview and export, because the app imports that file. The zip ships that same stylesheet as `css/PRIME_DMU.css`. `:root` defaults in that file match the app defaults; the generator overrides the four tokens above per export.
+Changing `DMU Examples/PRIME_13WC2610/css/PRIME_DMU.css` changes preview and export, because the app imports that file. The zip ships that stylesheet as `css/PRIME_DMU.css` after `applyDmuColors` replaces the four color tokens above in `:root` and appends the header-logo size rule. The preview inlines the same patched string. The reference file on disk is not edited, and its `:root` values act only as the replace targets.
